@@ -42,3 +42,22 @@ func getCommits(user string) Query {
 	return commits
 
 }
+
+func formatByMonths(*Query) {
+
+	type Month struct {
+		Month  int
+		Commit struct {
+			Message    string
+			Date       string
+			Repository string
+		}
+	}
+
+	var months = []Month{}
+
+	for _, v := range &Query.Items {
+
+	}
+
+}
