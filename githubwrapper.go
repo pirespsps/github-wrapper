@@ -28,7 +28,9 @@ func getCommits(user string) map[int][]bool {
 
 	year := fmt.Sprint(time.Now().Year())
 
-	var url = "https://api.github.com/search/commits?q=author:" + user + "&merge=true&since:" + year + "01-01T00:00:00Z"
+	//tem que ir paginando até chegar na pagina 10...
+	//fazer funcao
+	var url = "https://api.github.com/search/commits?q=author:" + user + "+committer-date:>=" + year + "-01-01T00:00:00Z" + "&sort=author-date&order=asc"
 
 	response, err := http.Get(url)
 	if err != nil {
@@ -88,7 +90,7 @@ func formatByMonths(query *Query) map[int][]bool {
 
 		}
 
-		monthCheck[day] = true
+		monthCheck[day-1] = true
 
 	}
 

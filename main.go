@@ -18,14 +18,14 @@ func main() {
 
 		for i, value := range v {
 
-			if i == 0 {
+			if i == 31 {
 				continue
 			}
 
 			if value {
-				fmt.Print(lipgloss.NewStyle().Foreground(lipgloss.Color("#66ff00")).Render(strconv.Itoa(i) + " "))
+				fmt.Print(lipgloss.NewStyle().Foreground(lipgloss.Color("#66ff00")).Render(strconv.Itoa(i+1) + " "))
 			} else {
-				fmt.Print(lipgloss.NewStyle().Foreground(lipgloss.Color("#d3000000")).Render(strconv.Itoa(i) + " "))
+				fmt.Print(lipgloss.NewStyle().Foreground(lipgloss.Color("#d3000000")).Render(strconv.Itoa(i+1) + " "))
 			}
 
 		}
