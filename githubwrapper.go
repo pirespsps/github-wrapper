@@ -84,11 +84,8 @@ func getCommits(user string) map[int][]bool {
 }
 
 func formatByMonths(query *Query) map[int][]bool {
-
 	months := make(map[int][]bool)
-
-	currentMonth := 1
-	var monthCheck = make([]bool, 32)
+	year := time.Now().Year()
 
 	for _, v := range query.Items {
 
@@ -102,38 +99,17 @@ func formatByMonths(query *Query) map[int][]bool {
 			log.Fatal(err)
 		}
 
-		if month > currentMonth {
-
-			for j := currentMonth; j < month; j++ {
-
-				totalDays := daysIn(time.Month(j), time.Now().Year())
-
-				for i := 0; i < totalDays; i++ {
-
-					if monthCheck[i] {
-						continue
-					}
-
-					monthCheck[i] = false
-				}
-				months[j] = monthCheck
-			}
-
-			monthCheck = make([]bool, daysIn(time.Month(month), time.Now().Year()))
-			currentMonth = month
-
+		if _, value := months[month]; !value {
+			months[month] = make([]bool, daysIn(time.Month(month), year))
 		}
 
-		if day-1 < len(monthCheck) {
-			monthCheck[day-1] = true
+		if (day - 1) < len(months[month]) {
+			months[month][day-1] = true
 		}
 
 	}
 
-	months[currentMonth] = monthCheck
-
 	return months
-
 }
 
 func daysIn(m time.Month, year int) int {
