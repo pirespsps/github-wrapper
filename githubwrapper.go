@@ -7,32 +7,37 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 )
 
 type Query struct {
 	Items []struct {
 		Commit struct {
-			Message string `json:"message"`
-			Author  struct {
+			Author struct {
 				Date string `json:"date"`
 			}
-		}
-		Repository struct {
-			FullName string `json:"full_name"`
 		}
 	}
 }
 
-func getCommits(user string) map[int][]bool {
+func paginatedFetch(user string, page int) Query {
 
 	year := fmt.Sprint(time.Now().Year())
+	pageStr := strconv.Itoa(page)
 
-	//tem que ir paginando até chegar na pagina 10...
-	//fazer funcao
-	var url = "https://api.github.com/search/commits?q=author:" + user + "+committer-date:>=" + year + "-01-01T00:00:00Z" + "&sort=author-date&order=asc"
+	var url = "https://api.github.com/search/commits?q=author:" + user + "+committer-date:>=" + year + "-01-01T00:00:00Z" + "&sort=author-date&order=asc&per_page=100&page=" + pageStr
 
-	response, err := http.Get(url)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	req.Header.Set("Accept", "application/vnd.github.cloak-preview")
+
+	client := &http.Client{Timeout: 10 * time.Second}
+
+	response, err := client.Do(req)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -46,7 +51,35 @@ func getCommits(user string) map[int][]bool {
 
 	json.Unmarshal(data, &commits)
 
-	return formatByMonths(&commits)
+	return commits
+}
+
+func getCommits(user string) map[int][]bool {
+
+	var wg sync.WaitGroup
+	queries := make(chan Query, 10)
+
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func(page int) {
+			defer wg.Done()
+			query := paginatedFetch(user, page)
+			queries <- query
+		}(i + 1)
+	}
+
+	go func() {
+		wg.Wait()
+		close(queries)
+	}()
+
+	var RealQuery Query
+
+	for query := range queries {
+		RealQuery.Items = append(RealQuery.Items, query.Items...)
+	}
+
+	return formatByMonths(&RealQuery)
 
 }
 
@@ -71,18 +104,19 @@ func formatByMonths(query *Query) map[int][]bool {
 
 		if month > currentMonth {
 
-			for j := range month - currentMonth {
+			for j := currentMonth; j < month; j++ {
 
-				totalDays := daysIn(time.Month(currentMonth+j), time.Now().Year())
+				totalDays := daysIn(time.Month(j), time.Now().Year())
 
-				for i := range totalDays {
+				for i := 0; i < totalDays; i++ {
 
 					if monthCheck[i] {
 						continue
 					}
+
 					monthCheck[i] = false
 				}
-				months[currentMonth+j] = monthCheck
+				months[j] = monthCheck
 			}
 
 			monthCheck = make([]bool, daysIn(time.Month(month), time.Now().Year()))
@@ -90,7 +124,9 @@ func formatByMonths(query *Query) map[int][]bool {
 
 		}
 
-		monthCheck[day-1] = true
+		if day-1 < len(monthCheck) {
+			monthCheck[day-1] = true
+		}
 
 	}
 
