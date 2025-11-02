@@ -1,9 +1,34 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+	"time"
+
+	"github.com/charmbracelet/lipgloss"
+)
 
 func main() {
-	commits := getCommits(User)
+	commitsPerMonth := getCommits(User)
 
-	fmt.Print(commits)
+	for i, v := range commitsPerMonth {
+
+		month := time.Month(i).String()
+		fmt.Print(month + "\n")
+
+		for i, value := range v {
+
+			if i == 0 {
+				continue
+			}
+
+			if value {
+				fmt.Print(lipgloss.NewStyle().Foreground(lipgloss.Color("#66ff00")).Render(strconv.Itoa(i) + " "))
+			} else {
+				fmt.Print(lipgloss.NewStyle().Foreground(lipgloss.Color("#d3000000")).Render(strconv.Itoa(i) + " "))
+			}
+
+		}
+		fmt.Print("\n\n")
+	}
 }

@@ -26,7 +26,9 @@ type Query struct {
 
 func getCommits(user string) map[int][]bool {
 
-	var url = "https://api.github.com/search/commits?q=author:" + user + "&merge=true"
+	year := fmt.Sprint(time.Now().Year())
+
+	var url = "https://api.github.com/search/commits?q=author:" + user + "&merge=true&since:" + year + "01-01T00:00:00Z"
 
 	response, err := http.Get(url)
 	if err != nil {
@@ -50,8 +52,8 @@ func formatByMonths(query *Query) map[int][]bool {
 
 	months := make(map[int][]bool)
 
-	var currentMonth int
-	var monthCheck = make([]bool, 31)
+	currentMonth := 1
+	var monthCheck = make([]bool, 32)
 
 	for _, v := range query.Items {
 
@@ -65,25 +67,23 @@ func formatByMonths(query *Query) map[int][]bool {
 			log.Fatal(err)
 		}
 
-		fmt.Printf("mes: %v dia: %v\n", month, day)
+		if month > currentMonth {
 
-		//está começando com o primeiro mes inteiro zerado devido a inicialização
-		//não está verificando mês a mês, apenas os que tem pelo menos uma commit
-		//fazer um for para ir zerando até chegar na primeira commit
-		//mudar a query da api para só puxar do ano
-		if month != currentMonth {
-			totalDays := daysIn(time.Month(currentMonth), time.Now().Year())
+			for j := range month - currentMonth {
 
-			for i := range totalDays {
+				totalDays := daysIn(time.Month(currentMonth+j), time.Now().Year())
 
-				if monthCheck[i] {
-					continue
+				for i := range totalDays {
+
+					if monthCheck[i] {
+						continue
+					}
+					monthCheck[i] = false
 				}
-				monthCheck[i] = false
+				months[currentMonth+j] = monthCheck
 			}
 
-			months[currentMonth] = monthCheck
-			monthCheck = make([]bool, 31)
+			monthCheck = make([]bool, daysIn(time.Month(month), time.Now().Year()))
 			currentMonth = month
 
 		}
@@ -91,6 +91,8 @@ func formatByMonths(query *Query) map[int][]bool {
 		monthCheck[day] = true
 
 	}
+
+	months[currentMonth] = monthCheck
 
 	return months
 
