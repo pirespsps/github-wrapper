@@ -21,6 +21,35 @@ type Query struct {
 	}
 }
 
+func getCommits(user string) map[int][]bool {
+
+	var wg sync.WaitGroup
+	queries := make(chan Query, 10)
+
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func(page int) {
+			defer wg.Done()
+			query := paginatedFetch(user, page)
+			queries <- query
+		}(i + 1)
+	}
+
+	go func() {
+		wg.Wait()
+		close(queries)
+	}()
+
+	var RealQuery Query
+
+	for query := range queries {
+		RealQuery.Items = append(RealQuery.Items, query.Items...)
+	}
+
+	return formatByMonths(&RealQuery)
+
+}
+
 func paginatedFetch(user string, page int) Query {
 
 	year := fmt.Sprint(time.Now().Year())
@@ -52,35 +81,6 @@ func paginatedFetch(user string, page int) Query {
 	json.Unmarshal(data, &commits)
 
 	return commits
-}
-
-func getCommits(user string) map[int][]bool {
-
-	var wg sync.WaitGroup
-	queries := make(chan Query, 10)
-
-	for i := 0; i < 10; i++ {
-		wg.Add(1)
-		go func(page int) {
-			defer wg.Done()
-			query := paginatedFetch(user, page)
-			queries <- query
-		}(i + 1)
-	}
-
-	go func() {
-		wg.Wait()
-		close(queries)
-	}()
-
-	var RealQuery Query
-
-	for query := range queries {
-		RealQuery.Items = append(RealQuery.Items, query.Items...)
-	}
-
-	return formatByMonths(&RealQuery)
-
 }
 
 func formatByMonths(query *Query) map[int][]bool {

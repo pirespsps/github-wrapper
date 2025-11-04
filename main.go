@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
@@ -10,8 +12,23 @@ import (
 
 func main() {
 	commitsPerMonth := getCommits(User)
+	terminal(&commitsPerMonth)
+}
 
-	for i, v := range commitsPerMonth {
+func terminal(commits *map[int][]bool) {
+	styleTrue := lipgloss.NewStyle().
+		Background(lipgloss.Color("#004d02")).
+		Foreground(lipgloss.Color("#ffffff")).
+		Align(lipgloss.Center).
+		Padding(0, 1)
+
+	styleFalse := lipgloss.NewStyle().
+		Background(lipgloss.Color("#800000")).
+		Foreground(lipgloss.Color("#ffffff")).
+		Align(lipgloss.Center).
+		Padding(0, 1)
+
+	for i, v := range *commits {
 
 		month := time.Month(i).String()
 		fmt.Print(month + "\n")
@@ -23,12 +40,23 @@ func main() {
 			}
 
 			if value {
-				fmt.Print(lipgloss.NewStyle().Foreground(lipgloss.Color("#66ff00")).Render(strconv.Itoa(i+1) + " "))
+				fmt.Print(styleTrue.Render(strconv.Itoa(i + 1)))
 			} else {
-				fmt.Print(lipgloss.NewStyle().Foreground(lipgloss.Color("#d3000000")).Render(strconv.Itoa(i+1) + " "))
+				fmt.Print(styleFalse.Render(strconv.Itoa(i + 1)))
 			}
 
 		}
 		fmt.Print("\n\n")
 	}
+}
+
+func makeWidget(commits *map[int][]bool) []byte {
+
+	jsonObj, err := json.Marshal(commits)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return jsonObj
+
 }
