@@ -99,7 +99,7 @@ func formatByMonths(query *Query) map[int][]bool {
 			log.Fatal(err)
 		}
 
-		if _, value := months[month]; !value {
+		if _, ok := months[month]; !ok {
 			months[month] = make([]bool, daysIn(time.Month(month), year))
 		}
 

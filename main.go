@@ -12,7 +12,8 @@ import (
 
 func main() {
 	commitsPerMonth := getCommits(User)
-	terminal(&commitsPerMonth)
+	//terminal(&commitsPerMonth)
+	fmt.Print(string(makeWidget(&commitsPerMonth)))
 }
 
 func terminal(commits *map[int][]bool) {
@@ -52,7 +53,7 @@ func terminal(commits *map[int][]bool) {
 
 func makeWidget(commits *map[int][]bool) []byte {
 
-	jsonObj, err := json.Marshal(commits)
+	jsonObj, err := json.Marshal(*commits)
 	if err != nil {
 		log.Fatal(err)
 	}
